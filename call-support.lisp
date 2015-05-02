@@ -20,9 +20,9 @@
   (declare (special *average-wait* *wait-fluctuation*))
   (when (and (boundp '*average-wait*) (boundp '*wait-fluctuation*)
              (numberp *average-wait*) (numberp *wait-fluctuation*))
-   (let ((base-wait-time (- *average-wait* (/ *wait-fluctuation* 2)))
-         (fluctuation (random (/ (coerce *wait-fluctuation* 'float) 2))))
-     (sleep (+ base-wait-time fluctuation)))))
+    (let ((base-wait-time (- *average-wait* (/ *wait-fluctuation* 2)))
+          (fluctuation (random (/ (coerce *wait-fluctuation* 'float) 2))))
+      (sleep (+ base-wait-time fluctuation)))))
 
 ;;;;;;;;;;;;;;;;;;
 ;;; defining pages
@@ -34,11 +34,11 @@
     with \"\\\\?.*$\" will allow keys to be given near the end of the
     string."
     (format nil "^/*~{~a~^/+~}/*~A"
-	    (mapcar (lambda (x)
+            (mapcar (lambda (x)
                       (if (keywordp x)
                           (string-downcase (symbol-name x))
                           "([^/]+)"))
-		    components)
+                    components)
             to-end)))
 
 (defun create-typed-regex-dispatcher (method regex handler)
@@ -57,21 +57,21 @@
         (method-symbol (intern (symbol-name method) :keyword)))
     `(push (create-typed-regex-dispatcher
             ,method-symbol
-	    ,(components-to-regex components)
-	    (lambda ()
-          (wait-for-page)
-	      (multiple-value-bind (s e starts ends)
-		  (cl-ppcre:scan ,(components-to-regex components "\\\\?.*$")
-				 (hunchentoot:request-uri*))
-		(declare (ignore s e))
+            ,(components-to-regex components)
+            (lambda ()
+              (wait-for-page)
+              (multiple-value-bind (s e starts ends)
+                  (cl-ppcre:scan ,(components-to-regex components "\\\\?.*$")
+                                 (hunchentoot:request-uri*))
+                (declare (ignore s e))
                 (setf (hunchentoot:content-type*) "application/json")
-		(jsown:to-json
+                (jsown:to-json
                  (apply (lambda (,@variables)
-			 ,@body)
-		       (loop for s across starts
-			  for e across ends
-			  collect (subseq (hunchentoot:request-uri*) s e)))))))
-	   hunchentoot:*dispatch-table*)))
+                          ,@body)
+                        (loop for s across starts
+                           for e across ends
+                           collect (subseq (hunchentoot:request-uri*) s e)))))))
+           hunchentoot:*dispatch-table*)))
 
 (defmacro with-parameters ((&rest parameters) &body body)
   `(let ,(loop for varname in parameters
