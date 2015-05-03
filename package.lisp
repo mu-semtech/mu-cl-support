@@ -5,5 +5,8 @@
                 :long-query :query :insert
                 :add-prefix)
   (:export :s+ :clean-url :clean-string
-           :post-body :defcall :boot
-           :*repository*))
+           :post-body :defcall :specify-call :boot
+           :*repository*
+           :fuseki-server :fuseki-repository
+           :long-query :query :insert
+           :add-prefix ))
