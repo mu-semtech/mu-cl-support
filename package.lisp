@@ -9,4 +9,5 @@
            :*repository*
            :fuseki-server :fuseki-repository
            :long-query :query :insert
-           :add-prefix ))
+           :add-prefix
+           :s-url :s-var :s-from-json :s-str :s-prefix :s-escaped :sparql-escape :raw-content))

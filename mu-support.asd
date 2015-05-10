@@ -4,4 +4,5 @@
   :components ((:file "package")
                (:file "helpers")
                (:file "call-support")
+               (:file "query-building")
                (:file "repository")))
