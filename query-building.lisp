@@ -62,7 +62,9 @@
 
 (defun s-from-json (content)
   (if (numberp content)
-      content
+      (if (rationalp content)
+          (coerce content 'float)
+          content)
       (s-str content)))
 
 (defun s-prefix (string &optional content)
