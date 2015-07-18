@@ -58,7 +58,9 @@
   (make-instance 'sparql-variable :content string))
 
 (defun s-str (string)
-  (make-instance 'sparql-string :content string))
+  (let ((escaped (cl-ppcre:regex-replace-all
+                  (string #\Newline) string "\\n")))
+   (make-instance 'sparql-string :content escaped)))
 
 (defun s-from-json (content)
   (if (numberp content)
