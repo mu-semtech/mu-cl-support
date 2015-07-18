@@ -76,4 +76,4 @@
                               string)))
 
 (defun s-escaped (string)
-  (make-instance 'spralq-escaped-content :content string))
+  (make-instance 'sparql-escaped-content :content string))
