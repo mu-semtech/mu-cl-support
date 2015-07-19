@@ -77,3 +77,27 @@
 
 (defun s-escaped (string)
   (make-instance 'sparql-escaped-content :content string))
+
+(defun s{} (&rest body)
+  "Constructs a graph pattern between {} for all content in body."
+  (format nil "{~{~&~4t~A~}~&}" body))
+
+(defun s-select (parameters &rest body)
+  "Constructs a SELECT statement."
+  (format nil "SELECT ~A WHERE ~&~A"
+          parameters (apply #'s{} body)))
+
+(defun s-delete (&rest body)
+  "Constructs a DELETE statement."
+  (format nil "DELETE WHERE ~&~A"
+          (apply #'s{} body)))
+
+(defun s-insert (&rest body)
+  "Constructs an INSERT DATA statement."
+  (format nil "INSERT DATA ~&~A~&"
+          (apply #'s{} body)))
+
+(defun s-graph (graph &rest body)
+  "Constructs a GRAPH statement."
+  (format nil "GRAPH ~A ~A"
+          graph (apply #'s{} body)))
