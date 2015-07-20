@@ -14,6 +14,6 @@
                                         :base-url (server-location))))
 
 (add-prefix "app" "http://mu.semte.ch/app/")
-(add-prefix "mu" "http://mu.semte.ch/vocabulary/")
-(add-prefix "rm" "http://mu.semte.ch/vocabulary/logical-delete/")
+(add-prefix "mu" "http://mu.semte.ch/vocabularies/")
+(add-prefix "rm" "http://mu.semte.ch/vocabularies/logical-delete/")
 
