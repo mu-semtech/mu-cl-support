@@ -30,7 +30,11 @@
 
 (defclass sparql-prefixed (sparql-content)
   ()
-  (:documentation "represents prefixed sparql content"))
+  (:documentation "Represents prefixed sparql content"))
+
+(defclass sparql-typed-literal (sparql-content)
+  ((literal-type :accessor literal-type :initarg :literal-type))
+  (:documentation "Represents a typed literal."))
 
 (defgeneric sparql-escape (content)
   (:documentation "Formats <content> so it can be rendered inside
@@ -46,7 +50,9 @@
     (s+ "\"" (clean-string (raw-content string)) "\""))
   (:method ((resource sparql-prefixed))
     ;; I think prefixes should have similar constraints as variables, no?
-    (clean-url (raw-content resource))))
+    (clean-url (raw-content resource)))
+  (:method ((resource sparql-typed-literal))
+    (s+ (sparql-escape (s-str (raw-content resource))) "^^" (literal-type resource))))
 
 (defmethod print-object ((content sparql-content) stream)
   (format stream "~A" (sparql-escape content)))
@@ -62,12 +68,19 @@
                   (string #\Newline) string "\\n")))
    (make-instance 'sparql-string :content escaped)))
 
+(defun s-bool (string)
+  (make-instance 'sparql-typed-literal
+                 :content (if string "true" "false")
+                 :literal-type "typedLiterals:boolean"))
+
 (defun s-from-json (content)
-  (if (numberp content)
-      (if (rationalp content)
-          (coerce content 'float)
-          content)
-      (s-str content)))
+  (cond ((rationalp content)
+         (coerce content 'float))
+        ((stringp content)
+         (s-str content))
+        ((numberp content)
+         content)
+        (t (s-bool content))))
 
 (defun s-prefix (string &optional content)
   (make-instance 'sparql-prefixed

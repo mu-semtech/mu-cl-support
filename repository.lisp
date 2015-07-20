@@ -15,5 +15,6 @@
 
 (add-prefix "app" "http://mu.semte.ch/app/")
 (add-prefix "mu" "http://mu.semte.ch/vocabularies/")
+(add-prefix "typedLiterals" "http://mu.semte.ch/vocabularies/typed-literals/")
 (add-prefix "rm" "http://mu.semte.ch/vocabularies/logical-delete/")
 
