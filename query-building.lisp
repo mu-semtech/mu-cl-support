@@ -36,6 +36,10 @@
   ((literal-type :accessor literal-type :initarg :literal-type))
   (:documentation "Represents a typed literal."))
 
+(defclass sparql-inverse (sparql-content)
+  ()
+  (:documentation "Represents the inverse relationship of its content."))
+
 (defgeneric sparql-escape (content)
   (:documentation "Formats <content> so it can be rendered inside
    a query.  This handles all necessary escaping.")
@@ -52,7 +56,12 @@
     ;; I think prefixes should have similar constraints as variables, no?
     (clean-url (raw-content resource)))
   (:method ((resource sparql-typed-literal))
-    (s+ (sparql-escape (s-str (raw-content resource))) "^^" (literal-type resource))))
+    (s+ (sparql-escape (s-str (raw-content resource))) "^^" (literal-type resource)))
+  (:method ((resource sparql-inverse))
+    (let ((content (raw-content resource)))
+      (if (typep content (find-class 'sparql-inverse))
+          (sparql-escape (raw-content content))
+          (s+ "^" (sparql-escape content))))))
 
 (defmethod print-object ((content sparql-content) stream)
   (format stream "~A" (sparql-escape content)))
@@ -72,6 +81,9 @@
   (make-instance 'sparql-typed-literal
                  :content (if string "true" "false")
                  :literal-type "typedLiterals:boolean"))
+
+(defun s-inv (content)
+  (make-instance 'sparql-inverse :content content))
 
 (defun s-from-json (content)
   (cond ((rationalp content)
