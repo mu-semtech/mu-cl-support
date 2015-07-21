@@ -112,10 +112,14 @@
   (format nil "SELECT ~A WHERE ~&~A"
           parameters (apply #'s{} body)))
 
-(defun s-delete (&rest body)
+(defun s-delete (clauses &optional where)
   "Constructs a DELETE statement."
-  (format nil "DELETE WHERE ~&~A"
-          (apply #'s{} body)))
+  (if where
+      (format nil "DELETE ~A WHERE ~A"
+              (s{} clauses)
+              (s{} where))
+      (format nil "DELETE WHERE ~&~A"
+              (s{} clauses))))
 
 (defun s-insert (&rest body)
   "Constructs an INSERT DATA statement."
