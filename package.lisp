@@ -11,4 +11,4 @@
            :long-query :query :insert
            :add-prefix
            :s-url :s-var :s-from-json :s-str :s-prefix :s-escaped :sparql-escape :raw-content
-           :s{} :s-graph :s-select :s-delete :s-insert :s-inv))
+           :s{} :s-graph :s-select :s-delete :s-insert :s-inv :s-inv-p))

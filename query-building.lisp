@@ -85,6 +85,10 @@
 (defun s-inv (content)
   (make-instance 'sparql-inverse :content content))
 
+(defun s-inv-p (content)
+  "returns non-nil iff content is an inverse predicate."
+  (typep content (find-class 'sparql-inverse)))
+
 (defun s-from-json (content)
   (cond ((rationalp content)
          (coerce content 'float))
