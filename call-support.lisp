@@ -117,7 +117,8 @@
 (defmacro defcall (method (&rest components) &body body)
   "defines a webpage, consisting of <components>"
   (let ((variables (remove-if #'keywordp components))
-        (method-symbol (intern (symbol-name method) :keyword)))
+        (method-symbol (intern (symbol-name method) :keyword))
+        (response-symbol (gensym "defcall-response")))
     `(push (create-typed-regex-dispatcher
             ,method-symbol
             ,(components-to-regex components)
@@ -128,12 +129,15 @@
                                  (hunchentoot:request-uri*))
                 (declare (ignore s e))
                 (setf (hunchentoot:content-type*) "application/json")
-                (jsown:to-json
-                 (apply (lambda (,@variables)
-                          ,@body)
-                        (loop for s across starts
-                           for e across ends
-                           collect (subseq (hunchentoot:request-uri*) s e)))))))
+                (let ((,response-symbol
+                       (apply (lambda (,@variables)
+                                ,@body)
+                              (loop for s across starts
+                                 for e across ends
+                                 collect (subseq (hunchentoot:request-uri*) s e)))))
+                  (if (eql ,response-symbol :no-content)
+                      ""
+                      (jsown:to-json ,response-symbol))))))
            hunchentoot:*dispatch-table*)))
 
 (defmacro with-parameters ((&rest parameters) &body body)
