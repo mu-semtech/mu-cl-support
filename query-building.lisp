@@ -56,7 +56,7 @@
     ;; I think prefixes should have similar constraints as variables, no?
     (clean-url (raw-content resource)))
   (:method ((resource sparql-typed-literal))
-    (s+ (sparql-escape (s-str (raw-content resource))) "^^" (literal-type resource)))
+    (s+ (sparql-escape (s-str (raw-content resource))) "^^" (sparql-escape (literal-type resource))))
   (:method ((resource sparql-inverse))
     (let ((content (raw-content resource)))
       (if (typep content (find-class 'sparql-inverse))
@@ -77,10 +77,13 @@
                   (string #\Newline) string "\\n")))
    (make-instance 'sparql-string :content escaped)))
 
-(defun s-bool (string)
+(defun s-typed (string type)
   (make-instance 'sparql-typed-literal
-                 :content (if string "true" "false")
-                 :literal-type "typedLiterals:boolean"))
+                 :content string
+                 :literal-type type))
+
+(defun s-bool (string)
+  (s-typed string (s-prefix "typedLiterals:boolean")))
 
 (defun s-inv (content)
   (make-instance 'sparql-inverse :content content))

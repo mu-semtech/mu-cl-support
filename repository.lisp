@@ -14,6 +14,7 @@
                                         :base-url (server-location))))
 
 (add-prefix "app" "http://mu.semte.ch/app/")
+(add-prefix "xsd" "http://www.w3.org/2001/XMLSchema#")
 (add-prefix "mu" "http://mu.semte.ch/vocabularies/")
 (add-prefix "typedLiterals" "http://mu.semte.ch/vocabularies/typed-literals/")
 (add-prefix "rm" "http://mu.semte.ch/vocabularies/logical-delete/")
