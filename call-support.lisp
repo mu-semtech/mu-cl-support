@@ -114,31 +114,33 @@
                                        (mk-response-method components callback))
         hunchentoot:*dispatch-table*))
 
+(defun define-call (method components function)
+  "defines a webpage in a functional way. see #'defcall"
+  (push (create-typed-regex-dispatcher
+         method
+         (components-to-regex components)
+         (lambda ()
+           (wait-for-page)
+           (multiple-value-bind (s e starts ends)
+               (cl-ppcre:scan (components-to-regex components "\\\\?.*$")
+                              (hunchentoot:request-uri*))
+             (declare (ignore s e))
+             (setf (hunchentoot:content-type*) "application/json")
+             (let ((request-components (loop for s across starts
+                                          for e across ends
+                                          collect (subseq (hunchentoot:request-uri*) s e))))
+               (let ((response (apply function request-components)))
+                 (if (eql response :no-content)
+                     ""
+                     (jsown:to-json response)))))))
+        hunchentoot:*dispatch-table*))
+
 (defmacro defcall (method (&rest components) &body body)
   "defines a webpage, consisting of <components>"
   (let ((variables (remove-if #'keywordp components))
-        (method-symbol (intern (symbol-name method) :keyword))
-        (response-symbol (gensym "defcall-response")))
-    `(push (create-typed-regex-dispatcher
-            ,method-symbol
-            ,(components-to-regex components)
-            (lambda ()
-              (wait-for-page)
-              (multiple-value-bind (s e starts ends)
-                  (cl-ppcre:scan ,(components-to-regex components "\\\\?.*$")
-                                 (hunchentoot:request-uri*))
-                (declare (ignore s e))
-                (setf (hunchentoot:content-type*) "application/json")
-                (let ((,response-symbol
-                       (apply (lambda (,@variables)
-                                ,@body)
-                              (loop for s across starts
-                                 for e across ends
-                                 collect (subseq (hunchentoot:request-uri*) s e)))))
-                  (if (eql ,response-symbol :no-content)
-                      ""
-                      (jsown:to-json ,response-symbol))))))
-           hunchentoot:*dispatch-table*)))
+        (method-symbol (intern (symbol-name method) :keyword)))
+    `(define-call ,method-symbol ,`(quote ,components)
+       (lambda (,@variables) ,@body))))
 
 (defmacro with-parameters ((&rest parameters) &body body)
   `(let ,(loop for varname in parameters
