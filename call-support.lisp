@@ -90,6 +90,15 @@
          (setf (gethash symbol variables-hash) value))
     variables-hash))
 
+(defun parse-request-uri-as-list (components)
+  (multiple-value-bind (s e starts ends)
+      (cl-ppcre:scan (components-to-regex components "\\\\?.*$")
+                     (hunchentoot:request-uri*))
+    (declare (ignore s e))
+    (loop for s across starts
+       for e across ends
+       collect (subseq (hunchentoot:request-uri*) s e))))
+
 (defun response-json-parser (response)
   "Parses the json for the response content by the matched
   method.
@@ -99,19 +108,22 @@
       ""
       (jsown:to-json response)))
 
-(defun mk-response-method (components callback)
+(defun mk-response-method (components callback applied-parameters-p)
   "constructs a method which parses <components> and calls
   <callback> with a hash containing the variables of the call as
   per `parse-request-content'."
   (lambda ()
     (wait-for-page)
     (setf (hunchentoot:content-type*) "application/json")
-    (funcall (alexandria:compose #'response-json-parser
-                                 callback
-                                 #'parse-request-uri)
-             components)))
+    (if applied-parameters-p
+        (response-json-parser
+         (apply callback (parse-request-uri-as-list components)))
+        (funcall (alexandria:compose #'response-json-parser
+                                     callback
+                                     #'parse-request-uri)
+                 components))))
 
-(defun specify-call (&key method components callback)
+(defun specify-call (&key method components callback applied-parameters-p)
   "defines a json call functionally.
 
   - method :: contains a :get :put :post :delete symbol.
@@ -120,38 +132,20 @@
   - callback :: function to be called to handle the request."
   (push (create-typed-regex-dispatcher method
                                        (components-to-regex* components)
-                                       (mk-response-method components callback))
-        hunchentoot:*dispatch-table*))
-
-(defun define-call (&key method components callback)
-  "defines a webpage in a functional way. see #'defcall
-
-  TODO: this may be a duplicate of specify-call."
-  (push (create-typed-regex-dispatcher
-         method
-         (components-to-regex components)
-         (lambda ()
-           (wait-for-page)
-           (multiple-value-bind (s e starts ends)
-               (cl-ppcre:scan (components-to-regex components "\\\\?.*$")
-                              (hunchentoot:request-uri*))
-             (declare (ignore s e))
-             (setf (hunchentoot:content-type*) "application/json")
-             (let ((request-components (loop for s across starts
-                                          for e across ends
-                                          collect (subseq (hunchentoot:request-uri*) s e))))
-               (let ((response (apply callback request-components)))
-                 (response-json-parser response))))))
+                                       (mk-response-method components
+                                                           callback
+                                                           applied-parameters-p))
         hunchentoot:*dispatch-table*))
 
 (defmacro defcall (method (&rest components) &body body)
   "defines a webpage, consisting of <components>"
   (let ((variables (remove-if #'keywordp components))
         (method-symbol (intern (symbol-name method) :keyword)))
-    `(define-call
+    `(specify-call
        :method ,method-symbol
        :components ,`(quote ,components)
-       :callback (lambda (,@variables) ,@body))))
+       :callback (lambda (,@variables) ,@body)
+       :applied-parameters-p t)))
 
 (defmacro with-parameters ((&rest parameters) &body body)
   `(let ,(loop for varname in parameters
