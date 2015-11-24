@@ -123,8 +123,10 @@
                                        (mk-response-method components callback))
         hunchentoot:*dispatch-table*))
 
-(defun define-call (method components function)
-  "defines a webpage in a functional way. see #'defcall"
+(defun define-call (&key method components callback)
+  "defines a webpage in a functional way. see #'defcall
+
+  TODO: this may be a duplicate of specify-call."
   (push (create-typed-regex-dispatcher
          method
          (components-to-regex components)
@@ -138,7 +140,7 @@
              (let ((request-components (loop for s across starts
                                           for e across ends
                                           collect (subseq (hunchentoot:request-uri*) s e))))
-               (let ((response (apply function request-components)))
+               (let ((response (apply callback request-components)))
                  (response-json-parser response))))))
         hunchentoot:*dispatch-table*))
 
@@ -146,8 +148,10 @@
   "defines a webpage, consisting of <components>"
   (let ((variables (remove-if #'keywordp components))
         (method-symbol (intern (symbol-name method) :keyword)))
-    `(define-call ,method-symbol ,`(quote ,components)
-       (lambda (,@variables) ,@body))))
+    `(define-call
+       :method ,method-symbol
+       :components ,`(quote ,components)
+       :callback (lambda (,@variables) ,@body))))
 
 (defmacro with-parameters ((&rest parameters) &body body)
   `(let ,(loop for varname in parameters
