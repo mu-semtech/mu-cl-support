@@ -90,6 +90,15 @@
          (setf (gethash symbol variables-hash) value))
     variables-hash))
 
+(defun response-json-parser (response)
+  "Parses the json for the response content by the matched
+  method.
+  If :no-content is returned, an empty response is returned
+  otherwise the response is assumed to be jsown content."
+  (if (eql response :no-content)
+      ""
+      (jsown:to-json response)))
+
 (defun mk-response-method (components callback)
   "constructs a method which parses <components> and calls
   <callback> with a hash containing the variables of the call as
@@ -97,7 +106,7 @@
   (lambda ()
     (wait-for-page)
     (setf (hunchentoot:content-type*) "application/json")
-    (funcall (alexandria:compose #'jsown:to-json
+    (funcall (alexandria:compose #'response-json-parser
                                  callback
                                  #'parse-request-uri)
              components)))
@@ -130,9 +139,7 @@
                                           for e across ends
                                           collect (subseq (hunchentoot:request-uri*) s e))))
                (let ((response (apply function request-components)))
-                 (if (eql response :no-content)
-                     ""
-                     (jsown:to-json response)))))))
+                 (response-json-parser response))))))
         hunchentoot:*dispatch-table*))
 
 (defmacro defcall (method (&rest components) &body body)
