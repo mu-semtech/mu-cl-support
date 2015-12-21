@@ -143,3 +143,8 @@ by a specific property."
   "Constructs a GRAPH statement."
   (format nil "GRAPH ~A ~A"
           graph (apply #'s{} body)))
+
+(let ((gennr 0))
+  (defun s-genvar (&optional (name "gensym"))
+    "Constructs an unused variable for a graph within the current thread."
+    (s-var (format nil "__~A~A" name (incf gennr)))))
