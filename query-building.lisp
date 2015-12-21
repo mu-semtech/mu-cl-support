@@ -114,10 +114,14 @@
   "Constructs a graph pattern between {} for all content in body."
   (format nil "{~{~&~4t~A~}~&}" body))
 
-(defun s-select (parameters &rest body)
-  "Constructs a SELECT statement."
-  (format nil "SELECT ~A WHERE ~&~A"
-          parameters (apply #'s{} body)))
+(defun s-select (parameters options &rest body)
+  "Constructs a SELECT statement.
+Options is a list which may contain the key :group-by for grouping
+by a specific property."
+  (destructuring-bind (&key order-by) options
+    (s+ "SELECT " parameters
+        " WHERE " (apply #'s{} body)
+        (if order-by (format nil " ORDER BY ~A" order-by) ""))))
 
 (defun s-delete (clauses &optional where)
   "Constructs a DELETE statement."
