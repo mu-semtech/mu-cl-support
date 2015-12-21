@@ -118,10 +118,12 @@
   "Constructs a SELECT statement.
 Options is a list which may contain the key :group-by for grouping
 by a specific property."
-  (destructuring-bind (&key order-by) options
-    (s+ "SELECT " parameters
+  (destructuring-bind (&key order-by limit offset) options
+    (s+ "SELECT " (format nil "~A" parameters)
         " WHERE " (apply #'s{} body)
-        (if order-by (format nil " ORDER BY ~A" order-by) ""))))
+        (if order-by (format nil " ORDER BY ~A" order-by) "")
+        (if offset (format nil " OFFSET ~A" offset) "")
+        (if limit (format nil " LIMIT ~A" limit) ""))))
 
 (defun s-delete (clauses &optional where)
   "Constructs a DELETE statement."
