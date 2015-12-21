@@ -19,3 +19,6 @@
   "Cleans the supplied string"
   (string-replace string "\"" "\\\""))
 
+(defun make-uuid ()
+  "Creates a new UUID"
+  (mongoid:oid-str (mongoid:oid)))
