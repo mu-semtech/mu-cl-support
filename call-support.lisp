@@ -74,30 +74,30 @@
        for e across ends
        collect (subseq string s e))))
 
-(defun parse-request-uri (components)
+(defun parse-script-name (components)
   "parses the contents of the current request as per
   <components>.  this entails searching for all matching content
   and placing it as variables in a hash.  all strings are
   considered fixpoints, all symbols are considered to be
   variables filled in by the current request."
-  (let ((request-uri (hunchentoot:request-uri*))
+  (let ((script-name (hunchentoot:script-name*))
         (symbols (remove-if-not #'symbolp components))
         (regex (components-to-regex* components))
         (variables-hash (make-hash-table)))
     (loop for symbol in symbols
-       for value in (regex-match-list regex request-uri)
+       for value in (regex-match-list regex script-name)
        do
          (setf (gethash symbol variables-hash) value))
     variables-hash))
 
-(defun parse-request-uri-as-list (components)
+(defun parse-script-name-as-list (components)
   (multiple-value-bind (s e starts ends)
       (cl-ppcre:scan (components-to-regex components "\\\\?.*$")
-                     (hunchentoot:request-uri*))
+                     (hunchentoot:script-name*))
     (declare (ignore s e))
     (loop for s across starts
        for e across ends
-       collect (subseq (hunchentoot:request-uri*) s e))))
+       collect (subseq (hunchentoot:script-name*) s e))))
 
 (defun response-json-parser (response)
   "Parses the json for the response content by the matched
@@ -117,10 +117,10 @@
     (setf (hunchentoot:content-type*) "application/json")
     (if applied-parameters-p
         (response-json-parser
-         (apply callback (parse-request-uri-as-list components)))
+         (apply callback (parse-script-name-as-list components)))
         (funcall (alexandria:compose #'response-json-parser
                                      callback
-                                     #'parse-request-uri)
+                                     #'parse-script-name)
                  components))))
 
 (defun specify-call (&key method components callback applied-parameters-p)
