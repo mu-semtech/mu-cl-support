@@ -15,7 +15,7 @@
 
 (add-prefix "app" "http://mu.semte.ch/app/")
 (add-prefix "xsd" "http://www.w3.org/2001/XMLSchema#")
-(add-prefix "muCore" "http://mu.semte.ch/vocabularies/core/")
+(add-prefix "mu" "http://mu.semte.ch/vocabularies/core/")
 (add-prefix "typedLiterals" "http://mu.semte.ch/vocabularies/typed-literals/")
 (add-prefix "rm" "http://mu.semte.ch/vocabularies/logical-delete/")
 
