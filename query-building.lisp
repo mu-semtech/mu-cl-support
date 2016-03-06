@@ -28,6 +28,10 @@
   ()
   (:documentation "Represents a string in a SPARQL query"))
 
+(defclass sparql-lang-string (sparql-content)
+  ((language :accessor language :initarg :language))
+  (:documentation "Represents a language-typed string in a SPARQL query"))
+
 (defclass sparql-prefixed (sparql-content)
   ()
   (:documentation "Represents prefixed sparql content"))
@@ -52,6 +56,9 @@
     (s+ "?" (clean-url (raw-content var))))
   (:method ((string sparql-string))
     (s+ "\"" (clean-string (raw-content string)) "\""))
+  (:method ((string sparql-lang-string))
+    (s+ (sparql-escape (make-instance 'sparql-string :content (raw-content string)))
+        "@" (language string)))
   (:method ((resource sparql-prefixed))
     ;; I think prefixes should have similar constraints as variables, no?
     (clean-url (raw-content resource)))
