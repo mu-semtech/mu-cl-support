@@ -85,8 +85,12 @@
     (if language
         (make-instance 'sparql-lang-string
                        :content escaped
-                       :language language)
+                       :language (escape-language language))
         (make-instance 'sparql-string :content escaped))))
+
+(defun escape-language (language)
+  "Escapes the language string <language>."
+  (cl-ppcre:scan-to-strings "\\w+" language))
 
 (defun s-typed (string type)
   (make-instance 'sparql-typed-literal
