@@ -12,6 +12,10 @@
   (:documentation "Primitive on top of which content which may be
    rendered are constructed."))
 
+(defclass sparql-multiple-values (sparql-content)
+  ()
+  (:documentation "Represents content which consists of multiple values"))
+
 (defclass sparql-escaped-content (sparql-content)
   ()
   (:documentation "Represents content which is already escaped"))
@@ -49,6 +53,9 @@
    a query.  This handles all necessary escaping.")
   (:method ((escaped sparql-escaped-content))
     (raw-content escaped))
+  (:method ((values sparql-multiple-values))
+    (format nil "~{~A~^, ~}"
+            (mapcar #'sparql-escape (raw-content values))))
   (:method ((url sparql-url))
     (s+ "<" (clean-url (raw-content url)) ">"))
   (:method ((var sparql-variable))
@@ -87,6 +94,9 @@
                        :content escaped
                        :language (escape-language language))
         (make-instance 'sparql-string :content escaped))))
+
+(defun s-values (&rest objects)
+  (make-instance 'sparql-multiple-values :content objects))
 
 (defun escape-language (language)
   "Escapes the language string <language>."
