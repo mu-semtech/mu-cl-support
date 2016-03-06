@@ -1,7 +1,7 @@
 (asdf:defsystem :mu-support
   :name "mu-support"
   :author "Aad Versteden <madnificent@gmail.com>"
-  :version "1.0.1"
+  :version "1.1.0"
   :maintainer "Aad Versteden <madnificent@gmail.com>"
   :licence "MIT"
   :description "Base support for mu.semte.ch microservices written in Common Lisp."
