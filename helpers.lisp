@@ -17,7 +17,9 @@
 
 (defun clean-string (string)
   "Cleans the supplied string"
-  (string-replace string "\"" "\\\""))
+  (string-replace
+   (string-replace string "\\" "\\\\\\\\")
+   "\"" "\\\""))
 
 (defun make-uuid ()
   "Creates a new UUID"
