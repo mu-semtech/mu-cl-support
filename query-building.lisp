@@ -143,9 +143,10 @@
   "Constructs a SELECT statement.
 Options is a list which may contain the key :group-by for grouping
 by a specific property."
-  (destructuring-bind (&key order-by limit offset) options
+  (destructuring-bind (&key order-by limit offset group-by) options
     (s+ "SELECT " (format nil "~A" parameters)
         " WHERE " (apply #'s{} body)
+        (if group-by (format nil " GROUP BY ~A" group-by) "")
         (if order-by (format nil " ORDER BY ~A" order-by) "")
         (if offset (format nil " OFFSET ~A" offset) "")
         (if limit (format nil " LIMIT ~A" limit) ""))))
