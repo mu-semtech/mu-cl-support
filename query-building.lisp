@@ -173,4 +173,5 @@ by a specific property."
 (let ((gennr 0))
   (defun s-genvar (&optional (name "gensym"))
     "Constructs an unused variable for a graph within the current thread."
-    (s-var (format nil "__~A~A" name (incf gennr)))))
+    (let ((clean-name (cl-ppcre:regex-replace-all "\\." name "_")))
+      (s-var (format nil "__~A~A" clean-name (incf gennr))))))
