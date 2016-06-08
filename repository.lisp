@@ -9,9 +9,16 @@
          "http://localhost:8890")))
 
 (defparameter *repository*
+  #-java-backend
   (make-instance 'fuseki::virtuoso-repository :name "main repository"
                  :server (make-instance 'fuseki::virtuoso-server
+                                        :base-url (server-location)))
+  #+java-backend
+  (make-instance 'weblogic-fuseki:java-repository :name "main repository"
+                 :server (make-instance 'weblogic-fuseki:java-server
                                         :base-url (server-location))))
+
+
 
 (add-prefix "app" "http://mu.semte.ch/app/")
 (add-prefix "xsd" "http://www.w3.org/2001/XMLSchema#")

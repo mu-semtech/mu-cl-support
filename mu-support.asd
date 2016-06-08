@@ -8,7 +8,7 @@
   :serial t
   :depends-on (:cl-fuseki :hunchentoot :jsown :cl-mongo-id
                           #+java-backend :uuid
-                          #+java-backend :abcl-java-helpers)
+                          #+java-backend :cl-fuseki-weblogic-plugin)
   :components ((:file "package")
                (:file "helpers")
                #-java-backend
