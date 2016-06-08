@@ -11,5 +11,7 @@
                (:file "helpers")
                (:file "hunchentoot-server")
                (:file "call-support")
+               #+java-backend
+               (:file "abcl-helpers")
                (:file "query-building")
                (:file "repository")))
