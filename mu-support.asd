@@ -9,6 +9,7 @@
   :depends-on (:cl-fuseki :hunchentoot :jsown :cl-mongo-id)
   :components ((:file "package")
                (:file "helpers")
+               (:file "hunchentoot-server")
                (:file "call-support")
                (:file "query-building")
                (:file "repository")))

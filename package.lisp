@@ -1,9 +1,32 @@
+(defpackage :webserver
+  (:use :cl)
+  (:import-from :hunchentoot :*request*)
+  (:export :return-code*
+           :header-in*
+           :get-parameter
+           :get-parameters*
+           :script-name*
+           :post-body
+           :request-method*
+           :content-type*
+           :header-out
+           :defcall
+           :+http-no-content+
+           :+http-not-found+
+           :+http-not-acceptable+
+           :+http-forbidden+
+           :+http-conflict+
+           :+http-created+))
+
 (defpackage :mu-support
   (:use :cl)
   (:import-from :fuseki
                 :fuseki-server :fuseki-repository
                 :long-query :query :insert
                 :add-prefix)
+  (:import-from :webserver
+                :defcall
+                :post-body)
   (:export :s+ :clean-url :clean-string :make-uuid
            :post-body :defcall :specify-call :boot
            :*repository*
