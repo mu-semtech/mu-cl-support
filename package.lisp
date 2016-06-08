@@ -1,3 +1,4 @@
+#-java-backend
 (defpackage :webserver
   (:use :cl)
   (:import-from :hunchentoot :*request*)
@@ -26,6 +27,27 @@
            :import-java-function
            :import-java-method
            :java-instance))
+
+#+java-backend
+(defpackage :webserver
+  (:use :cl)
+  (:export :perform-request
+           :return-code*
+           :header-in*
+           :get-parameter
+           :get-parameters*
+           :script-name*
+           :post-body
+           :request-method*
+           :content-type*
+           :header-out
+           :defcall
+           :+http-no-content+
+           :+http-not-found+
+           :+http-not-acceptable+
+           :+http-forbidden+
+           :+http-conflict+
+           :+http-created+))
 
 (defpackage :mu-support
   (:use :cl)

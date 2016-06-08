@@ -23,4 +23,7 @@
 
 (defun make-uuid ()
   "Creates a new UUID"
+  #+java-backend
+  (format nil "~A" (uuid:make-v4-uuid))
+  #-java-backend
   (mongoid:oid-str (mongoid:oid)))
