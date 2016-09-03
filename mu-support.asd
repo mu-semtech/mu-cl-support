@@ -6,7 +6,7 @@
   :licence "MIT"
   :description "Base support for mu.semte.ch microservices written in Common Lisp."
   :serial t
-  :depends-on (:cl-fuseki :hunchentoot :jsown :cl-mongo-id
+  :depends-on (:cl-fuseki #-java-backend :hunchentoot :jsown #-java-backend :cl-mongo-id
                           #+java-backend :uuid
                           #+java-backend :cl-fuseki-weblogic-plugin)
   :components ((:file "package")
