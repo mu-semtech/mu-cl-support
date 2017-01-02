@@ -107,8 +107,13 @@
                  :content string
                  :literal-type type))
 
-(defun s-bool (string)
-  (s-typed string (s-prefix "typedLiterals:boolean")))
+(defun s-bool (content)
+  (let ((string-representation
+         (if (or (not content)
+                (eq content :false))
+             "false" "true")))
+    (s-typed string-representation
+             (s-prefix "typedLiterals:boolean"))))
 
 (defun s-inv (content)
   (make-instance 'sparql-inverse :content content))
