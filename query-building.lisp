@@ -87,13 +87,11 @@
   (make-instance 'sparql-variable :content string))
 
 (defun s-str (string &optional language)
-  (let ((escaped (cl-ppcre:regex-replace-all
-                  (string #\Newline) string "\\n")))
-    (if language
-        (make-instance 'sparql-lang-string
-                       :content escaped
-                       :language (escape-language language))
-        (make-instance 'sparql-string :content escaped))))
+  (if language
+      (make-instance 'sparql-lang-string
+                     :content string
+                     :language (escape-language language))
+      (make-instance 'sparql-string :content string)))
 
 (defun s-values (&rest objects)
   (make-instance 'sparql-multiple-values :content objects))
