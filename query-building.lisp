@@ -28,6 +28,10 @@
   ()
   (:documentation "Represents a variable in a SPARQL query"))
 
+(defclass sparql-distinct (sparql-content)
+  ()
+  (:documentation "Represents a distinct in a SPARQL query"))
+
 (defclass sparql-string (sparql-content)
   ()
   (:documentation "Represents a string in a SPARQL query"))
@@ -61,6 +65,8 @@
   (:method ((var sparql-variable))
     ;; I think variables have more constraints than urls (spacing)
     (s+ "?" (clean-url (raw-content var))))
+  (:method ((distinct sparql-distinct))
+    (s+ "DISTINCT " (sparql-escape (raw-content distinct))))
   (:method ((string sparql-string))
     (s+ "\"" (clean-string (raw-content string)) "\""))
   (:method ((string sparql-lang-string))
@@ -85,6 +91,10 @@
 
 (defun s-var (string)
   (make-instance 'sparql-variable :content string))
+
+(defun s-distinct (var)
+  "DISTINCT wrapper for a sparql variable."
+  (make-instance 'distinct-var :content var))
 
 (defun s-str (string &optional language)
   (if language
