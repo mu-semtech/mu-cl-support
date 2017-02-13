@@ -94,7 +94,7 @@
 
 (defun s-distinct (var)
   "DISTINCT wrapper for a sparql variable."
-  (make-instance 'distinct-var :content var))
+  (make-instance 'sparql-distinct :content var))
 
 (defun s-str (string &optional language)
   (if language
