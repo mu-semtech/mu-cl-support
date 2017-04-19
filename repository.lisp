@@ -13,7 +13,7 @@
   (:documentation "repository for mu-semtech Virtuoso endpoints."))
 
 (defparameter *mu-semtech-passed-headers*
-  (list "mu-session-id")
+  (list "mu-session-id" "mu-call-id")
   "List of headers which are read from the request and passed to
    the client application.")
 
