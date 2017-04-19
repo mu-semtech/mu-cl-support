@@ -12,8 +12,19 @@
   ()
   (:documentation "repository for mu-semtech Virtuoso endpoints."))
 
-(defun mu-semtech-headers ()
-  (list (cons "mu-session-id" (webserver:header-in* :mu-session-id))))
+(defparameter *mu-semtech-passed-headers*
+  (list "mu-session-id")
+  "List of headers which are read from the request and passed to
+   the client application.")
+
+(defun mu-semtech-passed-headers ()
+  "Retrieves the headers (as a string) and their contents in a
+   way that's easy to pass through to the sparql endpoint."
+  (loop for header-string in *mu-semtech-passed-headers*
+     for header-key = (intern (string-upcase header-string) :keyword)
+     for header-value = (webserver:header-in* header-key)
+     if header-value
+     collect (cons header-string header-value)))
 
 (defmethod fuseki::query-raw ((repos mu-semtech-repository) (query string)
 			      &rest options &key &allow-other-keys)
@@ -23,7 +34,7 @@
     (fuseki::send-request (fuseki::query-endpoint repos)
                   :accept (fuseki::get-data-type-binding :json)
                   :parameters `(("query" . ,full-query))
-		  :additional-headers (mu-semtech-headers))))
+		  :additional-headers (mu-semtech-passed-headers))))
 
 (defparameter *repository*
   (make-instance 'mu-semtech-repository :name "main repository"
