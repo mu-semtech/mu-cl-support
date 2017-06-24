@@ -188,3 +188,30 @@ by a specific property."
     "Constructs an unused variable for a graph within the current thread."
     (let ((clean-name (cl-ppcre:regex-replace-all "[\\.\\-]" name "_")))
       (s-var (format nil "__~A~A" clean-name (incf gennr))))))
+
+(defgeneric full-uri (item)
+  (:documentation "returns a full URL of a resource constructed as
+    a URL, or by using a prefix.")
+  (:method ((url sparql-url))
+    (raw-content url))
+  (:method ((prefixed sparql-prefixed))
+    (destructuring-bind (prefix content)
+        (split-sequence:split-sequence #\: (raw-content prefixed))
+      (let ((base-uri (cl-fuseki:get-prefix prefix)))
+        (unless base-uri
+          (error 'simple-error :format-control "Prefix ~A could not be found." :format-arguments (list prefix)))
+        (s-url (format nil "~A~A" base-uri content))))))
+
+(defgeneric same-uri (item-a item-b)
+  (:documentation "returns t if both URIs are the same, because they
+    represent the same full URI if both would be represented as a URI.")
+  (:method ((pref-a sparql-prefixed) (pref-b sparql-prefixed))
+    (string= (raw-content pref-a)
+             (raw-content pref-b)))
+  (:method ((uri-a sparql-url) (uri-b sparql-url))
+    (string= (raw-content uri-a)
+             (raw-content uri-b)))
+  (:method ((pref-a sparql-prefixed) (uri-b sparql-url))
+    (same-uri (full-uri pref-a) uri-b))
+  (:method ((uri-a sparql-url) (pref-b sparql-prefixed))
+    (same-uri uri-a (full-uri pref-b))))
