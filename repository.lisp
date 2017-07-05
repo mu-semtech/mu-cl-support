@@ -36,6 +36,15 @@
                   :parameters `(("query" . ,full-query))
 		  :additional-headers (mu-semtech-passed-headers))))
 
+(defmethod fuseki::update-now ((repos mu-semtech-repository) (update string))
+  (fuseki::maybe-log-query update)
+  (fuseki::send-request (fuseki::update-endpoint repos)
+                        :wanted-status-codes '(200 204) ; only 204 is in the spec
+                        :content-type "application/sparql-update" ; fuseki-specific
+                        :method :post
+                        :content update
+                        :additional-headers (mu-semtech-passed-headers)))
+
 (defparameter *repository*
   (make-instance 'mu-semtech-repository :name "main repository"
                  :server (make-instance 'fuseki::virtuoso-server
