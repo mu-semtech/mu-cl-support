@@ -79,9 +79,13 @@
     (s+ (sparql-escape (s-str (raw-content resource))) "^^" (sparql-escape (literal-type resource))))
   (:method ((resource sparql-inverse))
     (let ((content (raw-content resource)))
-      (if (typep content (find-class 'sparql-inverse))
-          (sparql-escape (raw-content content))
-          (s+ "^" (sparql-escape content))))))
+      (cond ((typep content (find-class 'sparql-inverse))
+             (sparql-escape (raw-content content)))
+            ((and (listp content) (> (length content) 1))
+             (format nil "^(~{~A~^/~})" content))
+            ((listp content)
+             (s+ "^" (sparql-escape (first content))))
+            (t (s+ "^" (sparql-escape content)))))))
 
 (defmethod print-object ((content sparql-content) stream)
   (format stream "~A" (sparql-escape content)))
@@ -190,8 +194,9 @@ by a specific property."
       (s-var (format nil "__~A~A" clean-name (incf gennr))))))
 
 (defgeneric full-uri (item)
-  (:documentation "returns a full URL of a resource constructed as
-    a URL, or by using a prefix.")
+  (:documentation "Returns a full URL of a resource constructed as
+    a URL, or by using a prefix.  Also understands lists and other sparql
+    constructs.")
   (:method ((url sparql-url))
     (raw-content url))
   (:method ((prefixed sparql-prefixed))
@@ -200,7 +205,13 @@ by a specific property."
       (let ((base-uri (cl-fuseki:get-prefix prefix)))
         (unless base-uri
           (error 'simple-error :format-control "Prefix ~A could not be found." :format-arguments (list prefix)))
-        (s-url (format nil "~A~A" base-uri content))))))
+        (s-url (format nil "~A~A" base-uri content)))))
+  (:method ((items list))
+    (mapcar #'full-uri items))
+  (:method ((sparql-content sparql-content))
+    (full-uri (raw-content sparql-content)))
+  (:method ((anything t))
+    anything))
 
 (defgeneric same-uri (item-a item-b)
   (:documentation "returns t if both URIs are the same, because they
