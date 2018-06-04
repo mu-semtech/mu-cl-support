@@ -13,7 +13,7 @@
   (:documentation "repository for mu-semtech Virtuoso endpoints."))
 
 (defparameter *mu-semtech-passed-headers*
-  (list "mu-session-id" "mu-call-id")
+  (list "mu-session-id" "mu-call-id" "mu-authorization-groups")
   "List of headers which are read from the request and passed to
    the client application.")
 
@@ -27,23 +27,42 @@
      collect (cons header-string header-value)))
 
 (defmethod fuseki::query-raw ((repos mu-semtech-repository) (query string)
-			      &rest options &key &allow-other-keys)
+			                        &rest options &key &allow-other-keys)
   (fuseki::flush-updates repos)
   (let ((full-query (apply #'fuseki::query-update-prefixes query options)))
     (fuseki::maybe-log-query full-query)
-    (fuseki::send-request (fuseki::query-endpoint repos)
-                  :accept (fuseki::get-data-type-binding :json)
-                  :parameters `(("query" . ,full-query))
-		  :additional-headers (mu-semtech-passed-headers))))
+    (send-sparql-request (fuseki::query-endpoint repos)
+                         :accept (fuseki::get-data-type-binding :json)
+                         :method :post
+                         :parameters `(("query" . ,full-query))
+		                     :additional-headers (mu-semtech-passed-headers))))
 
 (defmethod fuseki::update-now ((repos mu-semtech-repository) (update string))
   (fuseki::maybe-log-query update)
-  (fuseki::send-request (fuseki::update-endpoint repos)
-                        :wanted-status-codes '(200 204) ; only 204 is in the spec
-                        :content-type "application/sparql-update" ; fuseki-specific
-                        :method :post
-                        :content update
-                        :additional-headers (mu-semtech-passed-headers)))
+  (send-sparql-request (fuseki::update-endpoint repos)
+                       :wanted-status-codes '(200 204) ; only 204 is in the spec
+                       :method :post
+                       :parameters `(("query" . ,update))
+                       :additional-headers (mu-semtech-passed-headers)))
+
+
+(defun send-sparql-request (url &rest html-args &key (wanted-status-codes '(200)) &allow-other-keys)
+  (cl-fuseki::remove-key html-args :wanted-status-codes)
+  (multiple-value-bind (response status-code response-headers)
+      (apply #'drakma:http-request url :force-binary t html-args)
+    (unless (and wanted-status-codes
+                 (find status-code wanted-status-codes))
+      (error 'sesame-exception
+             :status-code status-code
+             :response response))
+    ;; make sure the authorization keys are set on the response
+    (alexandria:when-let
+        ((received-authorization-keys (cdr (assoc :mu-authorization-groups response-headers))))
+      (setf (hunchentoot:header-out :mu-authorization-groups)
+            received-authorization-keys))
+    (let ((result (flexi-streams:octets-to-string response :external-format :utf-8)))
+      result)))
+
 
 (defparameter *repository*
   (make-instance 'mu-semtech-repository :name "main repository"
