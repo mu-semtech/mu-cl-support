@@ -13,7 +13,7 @@
   (:documentation "repository for mu-semtech Virtuoso endpoints."))
 
 (defparameter *mu-semtech-passed-headers*
-  (list "mu-session-id" "mu-call-id" "mu-authorization-groups")
+  (list "mu-session-id" "mu-call-id" "mu-auth-allowed-groups")
   "List of headers which are read from the request and passed to
    the client application.")
 
@@ -55,11 +55,19 @@
       (error 'sesame-exception
              :status-code status-code
              :response response))
+
     ;; make sure the authorization keys are set on the response
-    (alexandria:when-let
-        ((received-authorization-keys (cdr (assoc :mu-authorization-groups response-headers))))
-      (setf (hunchentoot:header-out :mu-authorization-groups)
-            received-authorization-keys))
+    (alexandria:when-let ((received-auth-allowed-groups
+                (cdr (assoc :mu-auth-allowed-groups response-headers))))
+      (setf (hunchentoot:header-out :mu-auth-allowed-groups)
+            received-auth-allowed-groups))
+    (alexandria:when-let ((received-auth-used-groups
+                (cdr (assoc :mu-auth-used-groups response-headers))))
+      ;; TODO: this second one is incorrect, we should actually join
+      ;; the used groups.  this will take a bit more time and the
+      ;; joining is not necessary yet.
+      (setf (hunchentoot:header-out :mu-auth-used-groups)
+            received-auth-used-groups))
     (let ((result (flexi-streams:octets-to-string response :external-format :utf-8)))
       result)))
 
