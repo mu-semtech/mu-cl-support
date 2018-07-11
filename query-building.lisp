@@ -68,7 +68,7 @@
   (:method ((distinct sparql-distinct))
     (s+ "DISTINCT " (sparql-escape (raw-content distinct))))
   (:method ((string sparql-string))
-    (s+ "\"" (clean-string (raw-content string)) "\""))
+    (s+ "\"\"\"" (clean-string (raw-content string)) "\"\"\""))
   (:method ((string sparql-lang-string))
     (s+ (sparql-escape (make-instance 'sparql-string :content (raw-content string)))
         "@" (language string)))
