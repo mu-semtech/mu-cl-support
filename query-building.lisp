@@ -205,7 +205,7 @@ by a specific property."
       (let ((base-uri (cl-fuseki:get-prefix prefix)))
         (unless base-uri
           (error 'simple-error :format-control "Prefix ~A could not be found." :format-arguments (list prefix)))
-        (s-url (format nil "~A~A" base-uri content)))))
+        (format nil "~A~A" base-uri content))))
   (:method ((items list))
     (mapcar #'full-uri items))
   (:method ((sparql-content sparql-content))
