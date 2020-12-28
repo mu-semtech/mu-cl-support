@@ -52,7 +52,7 @@
       (apply #'drakma:http-request url :force-binary t html-args)
     (unless (and wanted-status-codes
                  (find status-code wanted-status-codes))
-      (error 'sesame-exception
+      (error 'cl-fuseki:sesame-exception
              :status-code status-code
              :response response))
 
