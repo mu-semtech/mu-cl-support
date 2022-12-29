@@ -46,9 +46,10 @@
                      :force-string t
                      ;; :verbose t
                      :headers `(("accept" . "application/sparql-results+json")
-                                ,@(when (hunchentoot:header-out :mu-auth-allowed-groups)
-                                    (list (cons "mu-auth-allowed-groups"
-                                                (hunchentoot:header-out :mu-auth-allowed-groups)))))))
+                                ,@(alexandria:when-let
+                                      ((allowed-groups (or (hunchentoot:header-out :mu-auth-allowed-groups)
+                                                           (hunchentoot:header-in* :mu-auth-allowed-groups))))
+                                    (list (cons "mu-auth-allowed-groups" allowed-groups))))))
     (unless (and wanted-status-codes
                  (find status-code wanted-status-codes))
       (error 'cl-fuseki:sesame-exception
