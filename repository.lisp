@@ -46,6 +46,10 @@
                      :force-string t
                      ;; :verbose t
                      :headers `(("accept" . "application/sparql-results+json")
+                                ,@(alexandria:when-let ((header (hunchentoot:header-in* :mu-session-id)))
+                                    `(("mu-session-id" . ,header)))
+                                ,@(alexandria:when-let ((header (hunchentoot:header-in* :mu-call-id)))
+                                    `(("mu-call-id" . ,header)))
                                 ,@(alexandria:when-let
                                       ((allowed-groups (or (hunchentoot:header-out :mu-auth-allowed-groups)
                                                            (hunchentoot:header-in* :mu-auth-allowed-groups))))
