@@ -36,24 +36,34 @@
 (defun send-dex-request (url &key (wanted-status-codes '(200)) (query "") &allow-other-keys)
   ;; (cl-fuseki::remove-key html-args :wanted-status-codes)
   (multiple-value-bind (response status-code response-headers)
-      (let ((url (quri:uri url)))
-        (setf (quri:uri-query-params url)
-              `(("query" . ,query)))
-        (dex:request url
-                     :method :get
-                     :use-connection-pool t
-                     :keep-alive t
-                     :force-string t
-                     ;; :verbose t
-                     :headers `(("accept" . "application/sparql-results+json")
-                                ,@(alexandria:when-let ((header (hunchentoot:header-in* :mu-session-id)))
-                                    `(("mu-session-id" . ,header)))
-                                ,@(alexandria:when-let ((header (hunchentoot:header-in* :mu-call-id)))
-                                    `(("mu-call-id" . ,header)))
-                                ,@(alexandria:when-let
-                                      ((allowed-groups (or (hunchentoot:header-out :mu-auth-allowed-groups)
-                                                           (hunchentoot:header-in* :mu-auth-allowed-groups))))
-                                    (list (cons "mu-auth-allowed-groups" allowed-groups))))))
+      (let ((url (quri:uri url))
+            (headers `(("accept" . "application/sparql-results+json")
+                       ,@(alexandria:when-let ((header (hunchentoot:header-in* :mu-session-id)))
+                           `(("mu-session-id" . ,header)))
+                       ,@(alexandria:when-let ((header (hunchentoot:header-in* :mu-call-id)))
+                           `(("mu-call-id" . ,header)))
+                       ,@(alexandria:when-let
+                             ((allowed-groups (or (hunchentoot:header-out :mu-auth-allowed-groups)
+                                                  (hunchentoot:header-in* :mu-auth-allowed-groups))))
+                           (list (cons "mu-auth-allowed-groups" allowed-groups))))))
+        (if (< (length query) 5000) ;; guessing on 5k here
+            (progn
+              (setf (quri:uri-query-params url)
+                    `(("query" . ,query)))
+              (dex:request url
+                           :method :get
+                           :use-connection-pool t
+                           :keep-alive t
+                           :force-string t
+                           ;; :verbose t
+                           :headers headers))
+            (dex:request url
+                         :method :post
+                         :use-connection-pool nil
+                         :keep-alive nil
+                         :force-string t
+                         :headers headers
+                         :content `(("query" . ,query)))))
     (unless (and wanted-status-codes
                  (find status-code wanted-status-codes))
       (error 'cl-fuseki:sesame-exception
