@@ -26,10 +26,10 @@
      if header-value
      collect (cons header-string header-value)))
 
-(defmethod fuseki::query-raw ((repos mu-semtech-repository) (query string)
-			                        &rest options &key &allow-other-keys)
+(defmethod fuseki::query-raw ((repos mu-semtech-repository) (query string) &rest options &key &allow-other-keys)
   (cl-fuseki::flush-updates repos)
   (let ((full-query (apply #'cl-fuseki::query-update-prefixes query options)))
+    (fuseki::maybe-log-query full-query)
     (send-dex-request (cl-fuseki::query-endpoint repos)
                       :query full-query)))
 
