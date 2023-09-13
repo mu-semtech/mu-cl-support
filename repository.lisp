@@ -26,16 +26,63 @@
      if header-value
      collect (cons header-string header-value)))
 
-(defmethod fuseki::query-raw ((repos mu-semtech-repository) (query string)
-			                        &rest options &key &allow-other-keys)
-  (fuseki::flush-updates repos)
-  (let ((full-query (apply #'fuseki::query-update-prefixes query options)))
+(defmethod fuseki::query-raw ((repos mu-semtech-repository) (query string) &rest options &key &allow-other-keys)
+  (cl-fuseki::flush-updates repos)
+  (let ((full-query (apply #'cl-fuseki::query-update-prefixes query options)))
     (fuseki::maybe-log-query full-query)
-    (send-sparql-request (fuseki::query-endpoint repos)
-                         :accept (fuseki::get-data-type-binding :json)
+    (send-dex-request (cl-fuseki::query-endpoint repos)
+                      :query full-query)))
+
+(defun send-dex-request (url &key (wanted-status-codes '(200)) (query "") &allow-other-keys)
+  ;; (cl-fuseki::remove-key html-args :wanted-status-codes)
+  (multiple-value-bind (response status-code response-headers)
+      (let ((url (quri:uri url))
+            (headers `(("accept" . "application/sparql-results+json")
+                       ,@(alexandria:when-let ((header (hunchentoot:header-in* :mu-session-id)))
+                           `(("mu-session-id" . ,header)))
+                       ,@(alexandria:when-let ((header (hunchentoot:header-in* :mu-call-id)))
+                           `(("mu-call-id" . ,header)))
+                       ,@(alexandria:when-let
+                             ((allowed-groups (or (hunchentoot:header-out :mu-auth-allowed-groups)
+                                                  (hunchentoot:header-in* :mu-auth-allowed-groups))))
+                           (list (cons "mu-auth-allowed-groups" allowed-groups))))))
+        (if (< (length query) 5000) ;; guessing on 5k here
+            (progn
+              (setf (quri:uri-query-params url)
+                    `(("query" . ,query)))
+              (dex:request url
+                           :method :get
+                           :use-connection-pool t
+                           :keep-alive t
+                           :force-string t
+                           ;; :verbose t
+                           :headers headers))
+            (dex:request url
                          :method :post
-                         :parameters `(("query" . ,full-query))
-		                     :additional-headers (mu-semtech-passed-headers))))
+                         :use-connection-pool nil
+                         :keep-alive nil
+                         :force-string t
+                         :headers headers
+                         :content `(("query" . ,query)))))
+    (unless (and wanted-status-codes
+                 (find status-code wanted-status-codes))
+      (error 'cl-fuseki:sesame-exception
+             :status-code status-code
+             :response response))
+
+    ;; make sure the authorization keys are set on the response
+    (alexandria:when-let ((received-auth-allowed-groups
+                           (gethash "mu-auth-allowed-groups" response-headers)))
+      (setf (hunchentoot:header-out :mu-auth-allowed-groups)
+            received-auth-allowed-groups))
+    (alexandria:when-let ((received-auth-used-groups
+                           (gethash "mu-auth-used-groups" response-headers)))
+      ;; TODO: this second one is incorrect, we should actually join
+      ;; the used groups.  this will take a bit more time and the
+      ;; joining is not necessary yet.
+      (setf (hunchentoot:header-out :mu-auth-used-groups)
+            received-auth-used-groups))
+    response))
 
 (defmethod fuseki::update-now ((repos mu-semtech-repository) (update string))
   (fuseki::maybe-log-query update)
