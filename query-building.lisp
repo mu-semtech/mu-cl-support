@@ -7,6 +7,12 @@
 ;; which allows us to correctly escape content and which should
 ;; not be too obtrusive to the end-user.
 
+(defparameter *use-custom-boolean-type-p* t
+  "Use semantic.works's custom boolean type to work around database issues.
+The type is typedLiterals:boolean.  Uses
+http://www.w3.org/2001/XMLSchema#boolean when nil and the custom type
+when non-nil.")
+
 (defclass sparql-content ()
   ((content :accessor raw-content :initarg :content))
   (:documentation "Primitive on top of which content which may be
@@ -125,7 +131,9 @@
                 (eq content :false))
              "false" "true")))
     (s-typed string-representation
-             (s-prefix "typedLiterals:boolean"))))
+             (if *use-custom-boolean-type-p*
+                 (s-prefix "typedLiterals:boolean")
+                 (s-url "http://www.w3.org/2001/XMLSchema#boolean")))))
 
 (defun s-inv (content)
   (make-instance 'sparql-inverse :content content))
