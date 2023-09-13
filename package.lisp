@@ -36,4 +36,5 @@
            :s-url :s-var :s-from-json :s-str :s-prefix :s-escaped :s-typed :sparql-escape :raw-content
            :s{} :s-graph :s-select :s-delete :s-insert :s-inv :s-inv-p
            :s-genvar :s-values :s-distinct
-           :full-uri :same-uri))
+           :full-uri :same-uri
+           :*use-custom-boolean-type-p*))
