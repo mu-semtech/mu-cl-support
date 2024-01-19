@@ -83,7 +83,7 @@
   (let ((script-name (hunchentoot:script-name*))
         (symbols (remove-if-not #'symbolp components))
         (regex (components-to-regex* components))
-        (variables-hash (make-hash-table :synchcronized t)))
+        (variables-hash (make-hash-table :synchronized t)))
     (loop for symbol in symbols
        for value in (regex-match-list regex script-name)
        do
