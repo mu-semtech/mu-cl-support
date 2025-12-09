@@ -38,13 +38,13 @@
   (multiple-value-bind (response status-code response-headers)
       (let ((url (quri:uri url))
             (headers `(("accept" . "application/sparql-results+json")
-                       ,@(alexandria:when-let ((header (hunchentoot:header-in* :mu-session-id)))
+                       ,@(alexandria:when-let ((header (webserver:header-in* :mu-session-id)))
                            `(("mu-session-id" . ,header)))
-                       ,@(alexandria:when-let ((header (hunchentoot:header-in* :mu-call-id)))
+                       ,@(alexandria:when-let ((header (webserver:header-in* :mu-call-id)))
                            `(("mu-call-id" . ,header)))
                        ,@(alexandria:when-let
-                             ((allowed-groups (or (hunchentoot:header-out :mu-auth-allowed-groups)
-                                                  (hunchentoot:header-in* :mu-auth-allowed-groups))))
+                             ((allowed-groups (or (webserver:header-out :mu-auth-allowed-groups)
+                                                  (webserver:header-in* :mu-auth-allowed-groups))))
                            (list (cons "mu-auth-allowed-groups" allowed-groups))))))
         (if (< (length query) 5000) ;; guessing on 5k here
             (progn
@@ -73,14 +73,14 @@
     ;; make sure the authorization keys are set on the response
     (alexandria:when-let ((received-auth-allowed-groups
                            (gethash "mu-auth-allowed-groups" response-headers)))
-      (setf (hunchentoot:header-out :mu-auth-allowed-groups)
+      (setf (webserver:header-out :mu-auth-allowed-groups)
             received-auth-allowed-groups))
     (alexandria:when-let ((received-auth-used-groups
                            (gethash "mu-auth-used-groups" response-headers)))
       ;; TODO: this second one is incorrect, we should actually join
       ;; the used groups.  this will take a bit more time and the
       ;; joining is not necessary yet.
-      (setf (hunchentoot:header-out :mu-auth-used-groups)
+      (setf (webserver:header-out :mu-auth-used-groups)
             received-auth-used-groups))
     response))
 
@@ -106,14 +106,14 @@
     ;; make sure the authorization keys are set on the response
     (alexandria:when-let ((received-auth-allowed-groups
                 (cdr (assoc :mu-auth-allowed-groups response-headers))))
-      (setf (hunchentoot:header-out :mu-auth-allowed-groups)
+      (setf (webserver:header-out :mu-auth-allowed-groups)
             received-auth-allowed-groups))
     (alexandria:when-let ((received-auth-used-groups
                 (cdr (assoc :mu-auth-used-groups response-headers))))
       ;; TODO: this second one is incorrect, we should actually join
       ;; the used groups.  this will take a bit more time and the
       ;; joining is not necessary yet.
-      (setf (hunchentoot:header-out :mu-auth-used-groups)
+      (setf (webserver:header-out :mu-auth-used-groups)
             received-auth-used-groups))
     (let ((result (flexi-streams:octets-to-string response :external-format :utf-8)))
       result)))
