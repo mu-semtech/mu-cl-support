@@ -16,7 +16,9 @@
            :+http-not-acceptable+
            :+http-forbidden+
            :+http-conflict+
-           :+http-created+))
+           :+http-created+
+           :make-fake-connection-from-current
+           :with-fake-connection))
 
 (defpackage :mu-support
   (:use :cl)
