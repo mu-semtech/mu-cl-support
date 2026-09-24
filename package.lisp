@@ -39,4 +39,5 @@
            :s{} :s-graph :s-select :s-delete :s-insert :s-inv :s-inv-p
            :s-genvar :s-values :s-distinct
            :full-uri :same-uri
-           :*use-custom-boolean-type-p*))
+           :*use-custom-boolean-type-p*
+           :*mu-auth-sudo*))

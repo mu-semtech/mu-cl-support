@@ -17,21 +17,57 @@
   "List of headers which are read from the request and passed to
    the client application.")
 
+(defparameter *mu-auth-sudo* nil
+  "Set to T to send requests through mu-auth-sudo instead of the normal mu-auth-allowed-groups.")
+
 (defun mu-semtech-passed-headers ()
   "Retrieves the headers (as a string) and their contents in a
    way that's easy to pass through to the sparql endpoint."
-  (loop for header-string in *mu-semtech-passed-headers*
-     for header-key = (intern (string-upcase header-string) :keyword)
-     for header-value = (webserver:header-in* header-key)
-     if header-value
-     collect (cons header-string header-value)))
+  `(,@(loop for header-string in *mu-semtech-passed-headers*
+            for header-key = (intern (string-upcase header-string) :keyword)
+            for header-value = (webserver:header-in* header-key)
+            if (and header-value (or (not *mu-auth-sudo*)
+                                     (not (string= header-string "mu-auth-allowed-groups"))))
+              if header-value
+                collect (cons header-string header-value))
+    ,@(when *mu-auth-sudo*
+        `((cons "mu-auth-sudo" "on")))))
 
 (defmethod fuseki::query-raw ((repos mu-semtech-repository) (query string) &rest options &key &allow-other-keys)
-  (cl-fuseki::flush-updates repos)
-  (let ((full-query (apply #'cl-fuseki::query-update-prefixes query options)))
-    (fuseki::maybe-log-query full-query)
-    (send-dex-request (cl-fuseki::query-endpoint repos)
-                      :query full-query)))
+  (flet ((execute ()
+           (cl-fuseki::flush-updates repos)
+           (let ((full-query (apply #'cl-fuseki::query-update-prefixes query options)))
+             (fuseki::maybe-log-query full-query)
+             (send-dex-request (cl-fuseki::query-endpoint repos)
+                               :query full-query))))
+    (let ((retries 5)
+          (timeout 1)
+          (timeout-increase 5))
+      (loop for retry from 0
+            do
+               (if (= retries 0)
+                   (return (execute))
+                   (handler-case
+                       (if (= retry 0)
+                           ;; aggressive first try
+                           ;; TODO: inform mu-auth about this so it can optimize
+                           (let ((dexador.util:*default-connect-timeout* 5)
+                                 (dexador.util:*default-read-timeout* 10))
+                             (return (execute)))
+                           ;; lenient afterwards
+                           (let ((dexador.util:*default-connect-timeout* 55)
+                                 (dexador.util:*default-read-timeout* 120))
+                             (return (execute))))
+                     (usocket:socket-error (e)
+                       (format t "~&Socket error (try ~A), retrying~%~A~%" (1+ retry) e)
+                       (sleep timeout)
+                       (setf timeout (+ timeout timeout-increase))
+                       (decf retries))
+                     (sb-sys:io-timeout (e)
+                       (format t "~&IO timeout error (try ~A), retrying~%~A~%" (1+ retry) e)
+                       (sleep timeout)
+                       (setf timeout (+ timeout timeout-increase))
+                       (decf retries))))))))
 
 (defun send-dex-request (url &key (wanted-status-codes '(200)) (query "") &allow-other-keys)
   ;; (cl-fuseki::remove-key html-args :wanted-status-codes)
@@ -42,9 +78,12 @@
                            `(("mu-session-id" . ,header)))
                        ,@(alexandria:when-let ((header (webserver:header-in* :mu-call-id)))
                            `(("mu-call-id" . ,header)))
+                       ,@(when *mu-auth-sudo*
+                           `(("mu-auth-sudo" . "on")))
                        ,@(alexandria:when-let
-                             ((allowed-groups (or (webserver:header-out :mu-auth-allowed-groups)
-                                                  (webserver:header-in* :mu-auth-allowed-groups))))
+                             ((allowed-groups (and (not *mu-auth-sudo*)
+                                                   (or (webserver:header-out :mu-auth-allowed-groups)
+                                                       (webserver:header-in* :mu-auth-allowed-groups)))))
                            (list (cons "mu-auth-allowed-groups" allowed-groups))))))
         (if (< (length query) 5000) ;; guessing on 5k here
             (progn
@@ -73,8 +112,9 @@
     ;; make sure the authorization keys are set on the response
     (alexandria:when-let ((received-auth-allowed-groups
                            (gethash "mu-auth-allowed-groups" response-headers)))
-      (setf (webserver:header-out :mu-auth-allowed-groups)
-            received-auth-allowed-groups))
+      (unless *mu-auth-sudo*
+        (setf (webserver:header-out :mu-auth-allowed-groups)
+              received-auth-allowed-groups)))
     (alexandria:when-let ((received-auth-used-groups
                            (gethash "mu-auth-used-groups" response-headers)))
       ;; TODO: this second one is incorrect, we should actually join
@@ -92,7 +132,6 @@
                        :parameters `(("query" . ,update))
                        :additional-headers (mu-semtech-passed-headers)))
 
-
 (defun send-sparql-request (url &rest html-args &key (wanted-status-codes '(200)) &allow-other-keys)
   (cl-fuseki::remove-key html-args :wanted-status-codes)
   (multiple-value-bind (response status-code response-headers)
@@ -105,16 +144,18 @@
 
     ;; make sure the authorization keys are set on the response
     (alexandria:when-let ((received-auth-allowed-groups
-                (cdr (assoc :mu-auth-allowed-groups response-headers))))
-      (setf (webserver:header-out :mu-auth-allowed-groups)
-            received-auth-allowed-groups))
+                           (cdr (assoc :mu-auth-allowed-groups response-headers))))
+      (unless *mu-auth-sudo*
+        (setf (webserver:header-out :mu-auth-allowed-groups)
+              received-auth-allowed-groups)))
     (alexandria:when-let ((received-auth-used-groups
                 (cdr (assoc :mu-auth-used-groups response-headers))))
       ;; TODO: this second one is incorrect, we should actually join
       ;; the used groups.  this will take a bit more time and the
       ;; joining is not necessary yet.
-      (setf (webserver:header-out :mu-auth-used-groups)
-            received-auth-used-groups))
+      (unless *mu-auth-sudo*
+        (setf (webserver:header-out :mu-auth-used-groups)
+              received-auth-used-groups)))
     (let ((result (flexi-streams:octets-to-string response :external-format :utf-8)))
       result)))
 
